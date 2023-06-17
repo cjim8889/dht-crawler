@@ -54,7 +54,7 @@ func (db *postgresDatabase) Engine() databaseEngine {
 }
 
 func (db *postgresDatabase) DoesTorrentExist(infoHash []byte) (bool, error) {
-	rows, err := db.conn.Query(context.Background(), "SELECT 1 FROM torrents WHERE info_hash = $1;", infoHash)
+	rows, err := db.conn.Query(context.Background(), "SELECT 1 FROM dht_crawler.torrents WHERE info_hash = $1;", infoHash)
 	if err != nil {
 		return false, err
 	}
@@ -109,7 +109,7 @@ func (db *postgresDatabase) AddNewTorrent(infoHash []byte, name string, files []
 	err = tx.QueryRow(
 		context.Background(),
 		`
-		INSERT INTO torrents (
+		INSERT INTO dht_crawler.torrents (
 			info_hash,
 			name,
 			total_size,
@@ -134,7 +134,7 @@ func (db *postgresDatabase) AddNewTorrent(infoHash []byte, name string, files []
 
 		_, err = tx.Exec(
 			context.Background(),
-			"INSERT INTO files (torrent_id, size, path) VALUES ($1, $2, $3);",
+			"INSERT INTO dht_crawler.files (torrent_id, size, path) VALUES ($1, $2, $3);",
 			lastInsertId, file.Size, file.Path,
 		)
 		if err != nil {
@@ -161,7 +161,7 @@ func (db *postgresDatabase) GetNumberOfTorrents() (uint, error) {
 	// https://wiki.postgresql.org/wiki/Count_estimate
 	rows, err := db.conn.Query(
 		context.Background(),
-		"SELECT reltuples::BIGINT AS estimate_count FROM pg_class WHERE relname='torrents';",
+		"SELECT reltuples::BIGINT AS estimate_count FROM pg_class WHERE relname='dht_crawler.torrents';",
 	)
 	if err != nil {
 		return 0, err
@@ -206,7 +206,7 @@ func (db *postgresDatabase) GetTorrent(infoHash []byte) (*TorrentMetadata, error
 			t.total_size,
 			t.discovered_on,
 			(SELECT COUNT(*) FROM files f WHERE f.torrent_id = t.id) AS n_files
-		FROM torrents t
+		FROM dht_crawler.torrents t
 		WHERE t.info_hash = $1;`,
 		infoHash,
 	)
@@ -231,7 +231,7 @@ func (db *postgresDatabase) GetFiles(infoHash []byte) ([]File, error) {
 		SELECT
        		f.size,
        		f.path 
-		FROM files f, torrents t WHERE f.torrent_id = t.id AND t.info_hash = $1;`,
+		FROM dht_crawler.files f, dht_crawler.torrents t WHERE f.torrent_id = t.id AND t.info_hash = $1;`,
 		infoHash,
 	)
 	if err != nil {
