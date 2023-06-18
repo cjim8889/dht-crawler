@@ -177,6 +177,7 @@ func (db *postgresDatabase) GetNumberOfTorrents() (uint, error) {
 	if err = rows.Scan(&n); err != nil {
 		return 0, err
 	}
+	rows.Close()
 
 	// If the database is empty (i.e. 0 entries in 'torrents') then the query will return nil.
 	if n == nil {
@@ -222,6 +223,7 @@ func (db *postgresDatabase) GetTorrent(infoHash []byte) (*TorrentMetadata, error
 	if err = rows.Scan(&tm.InfoHash, &tm.Name, &tm.Size, &tm.DiscoveredOn, &tm.NFiles); err != nil {
 		return nil, err
 	}
+	rows.Close()
 
 	return &tm, nil
 }
@@ -246,6 +248,7 @@ func (db *postgresDatabase) GetFiles(infoHash []byte) ([]File, error) {
 		}
 		files = append(files, file)
 	}
+	rows.Close()
 
 	return files, nil
 }
